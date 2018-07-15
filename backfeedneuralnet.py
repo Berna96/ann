@@ -167,19 +167,46 @@ class LayerNeuralNet:
         return self.__Y
 
     def correct_net_weights(self, D: List[float], neta: float = 0.6):
+        #creo gli errori
         err_y = [D[i] - self.__Y[i] for i in range(len(self.__Y))]
-        #err = []
-        #for hidd_layer in
-        print('err_y: ', err_y)
-        #delta_y = []
+        err_layers = []
+        #print('err_y: ', err_y)
+        #print('err_layer: ', err_layer)
+        hidden_layer_rev = copy.copy(self.__hidden_layer)
+        # print('self.__hidden_layer: ', self.__hidden_layer)
+        hidden_layer_rev.reverse()
+        # print('self.__hidden_layer: ', self.__hidden_layer)
+        # print('hidden_layer_rev: ', hidden_layer_rev)
+        f = True
+        for hidd_layer in hidden_layer_rev:
+            index_layer = hidden_layer_rev.index(hidd_layer)
+            #print('index layer: ', index_layer)
+            #print('hidden layer[', index_layer, ']: ', hidd_layer)
+            err_layer = []
+            if f:
+                target = self.__output_layer
+                f = False
+            else:
+                target = hidden_layer_rev[index_layer - 1]
+            #print('target: ', target)
+            for neuron in hidd_layer:
+                index = hidd_layer.index(neuron)
+                error = 0.0
+                for neu in target:
+                    error = error + neu.get_delta() * neu.get_weights(index)
+                err_layer.append(error)
+            err_layers.append(err_layer)
+        #correggo i pesi
+
+
         for neuron in self.__output_layer:
             index = self.__output_layer.index(neuron)
             neuron.correct_weights(err_y[index], neta)
             #delta_y.append(neuron.get_delta())
         f = True
-        hidden_layer_rev = copy.copy(self.__hidden_layer)
+        #hidden_layer_rev = copy.copy(self.__hidden_layer)
         #print('self.__hidden_layer: ', self.__hidden_layer)
-        hidden_layer_rev.reverse()
+        #hidden_layer_rev.reverse()
         #print('self.__hidden_layer: ', self.__hidden_layer)
         #print('hidden_layer_rev: ', hidden_layer_rev)
         for hidd_layer in hidden_layer_rev:
@@ -194,12 +221,7 @@ class LayerNeuralNet:
             #print('target: ', target)
             for neuron in hidd_layer:
                 index = hidd_layer.index(neuron)
-                error = 0.0
-                #print('index: ', index)
-                #print('target ', target)
-                for neu in target:
-                    error = error + neu.get_delta() * neu.get_weights(index)
-                neuron.correct_weights(error, neta)
+                neuron.correct_weights(err_layers[index_layer][index], neta)
 
 
 class Row:
@@ -276,4 +298,5 @@ eps = 0.5
 addestramento = Addestramento(rete, tabella_addestramento, neta, eps)
 rete_addestrata, n_addr = addestramento.addestra()
 X = [1, 0, 0, 1]
-print('uscita finale: ', rete_addestrata.set_net_input(X), '; numero tentatvi: ', n_addr)
+print('input: ', X)
+print('uscita finale: ', rete_addestrata.set_net_input(X), '; numero tentativi: ', n_addr)
