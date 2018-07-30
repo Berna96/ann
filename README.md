@@ -6,4 +6,4 @@ Python modules of ANN:
 1. Back-propagation Multi-layers Netwoks
 
 (Testing and ready)
-None
+Only Perceptron
