@@ -6,8 +6,7 @@ Artificial Neural Network test
 Python modules of ANN:
 1. Back-propagation Multi-layers Netwoks
 
-
 (Testing)
-
-Python modules of ANN:
-1. Back-propagation Multi-layers Netwoks
+All
+(Ready to use)
+Only perceptron configuration
