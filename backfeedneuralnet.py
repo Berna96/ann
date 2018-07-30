@@ -40,12 +40,16 @@ class Neurone:
 
     def correct_weights(self, error: float, neta: float = 0.6) -> float:
         self.__delta_w = error * self.__Y * (1 - self.__Y)
-        self.__W = [self.__W[i] + neta * self.__delta_w * self.__X[i] for i in
-                    range(len(self.__W))]  # incluso il calcolo del bias
+
+        W = []
+        for i in range(len(self.__W)):
+            W.append(self.__W[i] + neta * self.__delta_w * self.__X[i])
+        self.__W = W
+        #print('pesi: ', self.__W)
         self.__b = self.__W[-1]
 
     def set_input(self, X):
-        #print('X: ' ,X)
+        # print('X: ' ,X)
         if not type(X) == list:
             raise TypeError()
         for e in X:
@@ -54,7 +58,7 @@ class Neurone:
                     e = e.real
             if not (type(e) == int or type(e) == float):
                 raise TypeError()
-        if not self.__n_X == (len(X)+1):
+        if not self.__n_X == (len(X) + 1):
             raise DimensionError()
         # set degli input X + bias
         self.__X.extend(X)
@@ -78,7 +82,10 @@ class Neurone:
             else:
                 self.__Y = 0
         elif self.__tf == 'Sigmoidal':
-            self.__Y = 1 / (1 + exp(-self.__A))
+            try:
+                self.__Y = 1 / (1 + exp(-self.__A))
+            except OverflowError:
+                print("C'e stato un overflow") #da cambiare
         else:
             raise TfNotDefinedError()
 
@@ -113,7 +120,7 @@ class LayerNeuralNet:
         self.__n_layers = []
         self.__n_layers.extend(self.__n_hidden)
         self.__n_layers.append(self.__n_output)
-        #print('layers', self.__n_layers)
+        # print('layers', self.__n_layers)
         self.__Y = []
         layer = list()
         matrix = list()
@@ -150,7 +157,7 @@ class LayerNeuralNet:
             perceptron: Neurone
 
             for perceptron in layer:
-                #print(input_layer[index])
+                # print(input_layer[index])
                 out = perceptron.set_input(input_layer[index])
                 output_layer.append(out)
             input_layer.append(output_layer)
@@ -167,11 +174,13 @@ class LayerNeuralNet:
         return self.__Y
 
     def correct_net_weights(self, D: List[float], neta: float = 0.6):
-        #creo gli errori
-        err_y = [D[i] - self.__Y[i] for i in range(len(self.__Y))]
+        # creo gli errori
+        err_y = []
+        for i in range(len(self.__Y)):
+            err_y.append(D[i] - self.__Y[i])
         err_layers = []
-        #print('err_y: ', err_y)
-        #print('err_layer: ', err_layer)
+        print('err_y: ', err_y)
+        # print('err_layer: ', err_layer)
         hidden_layer_rev = copy.copy(self.__hidden_layer)
         # print('self.__hidden_layer: ', self.__hidden_layer)
         hidden_layer_rev.reverse()
@@ -180,15 +189,15 @@ class LayerNeuralNet:
         f = True
         for hidd_layer in hidden_layer_rev:
             index_layer = hidden_layer_rev.index(hidd_layer)
-            #print('index layer: ', index_layer)
-            #print('hidden layer[', index_layer, ']: ', hidd_layer)
+            # print('index layer: ', index_layer)
+            # print('hidden layer[', index_layer, ']: ', hidd_layer)
             err_layer = []
             if f:
                 target = self.__output_layer
                 f = False
             else:
                 target = hidden_layer_rev[index_layer - 1]
-            #print('target: ', target)
+            # print('target: ', target)
             for neuron in hidd_layer:
                 index = hidd_layer.index(neuron)
                 error = 0.0
@@ -196,29 +205,28 @@ class LayerNeuralNet:
                     error = error + neu.get_delta() * neu.get_weights(index)
                 err_layer.append(error)
             err_layers.append(err_layer)
-        #correggo i pesi
-
+        # correggo i pesi
 
         for neuron in self.__output_layer:
             index = self.__output_layer.index(neuron)
             neuron.correct_weights(err_y[index], neta)
-            #delta_y.append(neuron.get_delta())
+            # delta_y.append(neuron.get_delta())
         f = True
-        #hidden_layer_rev = copy.copy(self.__hidden_layer)
-        #print('self.__hidden_layer: ', self.__hidden_layer)
-        #hidden_layer_rev.reverse()
-        #print('self.__hidden_layer: ', self.__hidden_layer)
-        #print('hidden_layer_rev: ', hidden_layer_rev)
+        # hidden_layer_rev = copy.copy(self.__hidden_layer)
+        # print('self.__hidden_layer: ', self.__hidden_layer)
+        # hidden_layer_rev.reverse()
+        # print('self.__hidden_layer: ', self.__hidden_layer)
+        # print('hidden_layer_rev: ', hidden_layer_rev)
         for hidd_layer in hidden_layer_rev:
             index_layer = hidden_layer_rev.index(hidd_layer)
-            #print('index layer: ', index_layer)
-            #print('hidden layer[', index_layer, ']: ', hidd_layer)
+            # print('index layer: ', index_layer)
+            # print('hidden layer[', index_layer, ']: ', hidd_layer)
             if f:
                 target = self.__output_layer
                 f = False
             else:
                 target = hidden_layer_rev[index_layer - 1]
-            #print('target: ', target)
+            # print('target: ', target)
             for neuron in hidd_layer:
                 index = hidd_layer.index(neuron)
                 neuron.correct_weights(err_layers[index_layer][index], neta)
@@ -233,7 +241,6 @@ class Row:
 class DesiredTable:
 
     def __init__(self, row: Row = None):
-
         self.table = []
         if row is not None:
             self.table.append(row)
@@ -245,7 +252,6 @@ class DesiredTable:
         self.table = []
 
 
-
 class Addestramento:
 
     def __init__(self, net, tab_D, neta, eps):
@@ -255,28 +261,48 @@ class Addestramento:
         self.__eps = eps
 
     def addestra(self):
-        n = 0
-        for row in self.__tabella_D.table:
-            print('row.input: ', row.input, '; row.output: ', row.output)
-            #flag = True
-            y = self.__net.set_net_input(row.input)
-            while self.__check_gt_eps(row.output, y, eps):  #or flag
-                #flag = False
-                n = n + 1
+        n = -1
+        y_rows = []
+        D = []
+        y = []
+        while True:
+            n = n + 1
+            #clacolo uscite della rete
+            for row in self.__tabella_D.table:
+                print('row.input: ', row.input, '; row.output: ', row.output)
                 y = self.__net.set_net_input(row.input)
-                if not self.__check_gt_eps(row.output, y, eps):
-                    break
-                else:
-                    self.__net.correct_net_weights(row.output, self.__neta)
+                y_rows.append(y)
+                D.append(row.output)
+
+            #controllo
+            if self.__check_less_eps(D, y_rows, self.__eps):
+                break
+            else:
+                for d in D:
+                    self.__net.correct_net_weights(d, self.__neta)
+            y_rows.clear()
+            D.clear()
+
         return self.__net, n
 
-    def __check_gt_eps(self, ref, y, eps):
-        diff = [abs(ref[i]-y[i]) for i in range(len(y))]
-        cond: List[bool] = [diff[i] > eps for i in range(len(y))]
-        or_cond = False
-        for c in cond:
-            or_cond = or_cond or c
-        return or_cond
+    def __check_less_eps(self, ref, y, epsilon: float):
+        """
+
+        :type epsilon: float
+        """
+        cond = True
+        error = 0.0
+        error_cond = False
+        for i in range(len(y)):
+            for j in range(len(y[i])):
+                error = (abs(ref[i][j] - y[i][j]))
+                error_cond = error < epsilon
+
+                print('error: ', error, '=', ref[i][j], ' - ',y[i][j])
+                print('cond: ', error_cond)
+                cond = cond and error_cond
+        return cond
+
 
 # main
 configuration_net = [4, 5, 6, 1]
@@ -284,7 +310,7 @@ print('configurations ', configuration_net)
 rete = LayerNeuralNet(configuration_net)
 # tabella di addestramento
 tabella_addestramento = DesiredTable()
-#print('input output')
+# print('input output')
 
 tabella_addestramento.append(Row([1, 0, 0, 1], [1]))
 tabella_addestramento.append(Row([0, 0, 0, 1], [1]))
@@ -293,8 +319,8 @@ tabella_addestramento.append(Row([1, 0, 0, 0], [0]))
 tabella_addestramento.append(Row([1, 1, 0, 0], [0]))
 tabella_addestramento.append(Row([0, 0, 1, 0], [0]))
 
-neta = 0.6
-eps = 0.5
+neta = 0.8
+eps = 0.1
 addestramento = Addestramento(rete, tabella_addestramento, neta, eps)
 rete_addestrata, n_addr = addestramento.addestra()
 X = [1, 0, 0, 1]
