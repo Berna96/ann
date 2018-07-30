@@ -11,8 +11,3 @@ Python modules of ANN:
 
 Python modules of ANN:
 1. Back-propagation Multi-layers Netwoks
-
-
-(Ready for use)
-
-None
